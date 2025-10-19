@@ -1,0 +1,360 @@
+# =============================================================================
+# LAB 1: BUILDING CHATBOTS WITH TRANSFORMER MODELS
+# =============================================================================
+# This lab demonstrates how to create chatbots using pre-trained transformer 
+# models from Hugging Face. We'll build two different chatbots using different
+# models and compare their responses.
+
+# =============================================================================
+# STEP 1: INSTALL REQUIRED LIBRARIES
+# =============================================================================
+# Install PyTorch with CPU support (lightweight version for CPU-only machines)
+%pip install torch==2.8.0+cpu torchvision==0.23.0+cpu torchaudio==2.8.0+cpu torchtext==0.18.0+cpu  \
+    --index-url https://download.pytorch.org/whl/cpu
+
+# Install Hugging Face transformers library and other dependencies
+%pip install transformers==4.42.1 tensorflow sentencepiece numpy==1.26
+
+# =============================================================================
+# STEP 2: IMPORT REQUIRED LIBRARIES
+# =============================================================================
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+# AutoTokenizer: Automatically loads the correct tokenizer for any model
+# AutoModelForSeq2SeqLM: Loads sequence-to-sequence language models (good for chatbots)
+
+# =============================================================================
+# STEP 3: SETUP FIRST CHATBOT (Facebook BlenderBot)
+# =============================================================================
+# Model Selection: Facebook's BlenderBot-400M-Distill
+# - 400M parameters (relatively small, fast)
+# - Distilled version (compressed for efficiency)
+# - Trained for conversational AI
+model_name = "facebook/blenderbot-400M-distill"
+
+# Load the pre-trained model and its tokenizer
+# from_pretrained() downloads the model from Hugging Face Hub if not cached locally
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+# =============================================================================
+# STEP 4: CREATE CHAT FUNCTION FOR FIRST BOT
+# =============================================================================
+def chat_with_bot():
+    """
+    Interactive chat function that runs a continuous conversation loop.
+    The bot will respond to user input until the user types exit commands.
+    """
+    while True:  # Infinite loop for continuous conversation
+        # Get user input from command line
+        input_text = input("You: ")
+
+        # Check for exit conditions (case-insensitive)
+        if input_text.lower() in ["quit", "exit", "bye"]:
+            print("Chatbot: Goodbye!")
+            break  # Exit the while loop
+
+        # =============================================================
+        # TEXT PROCESSING PIPELINE:
+        # =============================================================
+        # 1. TOKENIZATION: Convert text to numbers the model can understand
+        inputs = tokenizer.encode(input_text, return_tensors="pt")
+        # return_tensors="pt" returns PyTorch tensors (required format)
+        
+        # 2. GENERATION: Use the model to generate a response
+        outputs = model.generate(inputs, max_new_tokens=150)
+        # max_new_tokens=150 limits response length to ~150 words
+        
+        # 3. DECODING: Convert model's numeric output back to readable text
+        response = tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
+        # skip_special_tokens=True removes technical tokens like <pad>, <eos>
+        # .strip() removes extra whitespace
+
+        # Display the bot's response
+        print("Chatbot:", response)
+
+# Start the first chatbot
+chat_with_bot()
+
+# =============================================================================
+# STEP 5: SETUP SECOND CHATBOT (Google FLAN-T5)
+# =============================================================================
+# Import sentencepiece (required for some Google models)
+import sentencepiece
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+
+# Model Selection: Google's FLAN-T5-Base
+# - FLAN = "Finetuned Language Net" (instruction-tuned)
+# - T5 = Text-to-Text Transfer Transformer
+# - Base size (good balance of performance and speed)
+model_name = "google/flan-t5-base"
+
+# Load the second model and tokenizer
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+
+# =============================================================================
+# STEP 6: CREATE CHAT FUNCTION FOR SECOND BOT
+# =============================================================================
+def chat_with_another_bot():
+    """
+    Second chatbot using Google's FLAN-T5 model.
+    This demonstrates how different models can have different conversation styles.
+    """
+    while True:  # Same infinite loop structure
+        # Get user input
+        input_text = input("You: ")
+
+        # Same exit conditions
+        if input_text.lower() in ["quit", "exit", "bye"]:
+            print("Chatbot: Goodbye!")
+            break
+
+        # Same text processing pipeline:
+        # 1. Tokenize user input
+        inputs = tokenizer.encode(input_text, return_tensors="pt")
+        
+        # 2. Generate response using the second model
+        outputs = model.generate(inputs, max_new_tokens=150)
+        
+        # 3. Decode response back to text
+        response = tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
+        
+        # Display response
+        print("Chatbot:", response)
+
+# Start the second chatbot
+chat_with_another_bot()
+
+# =============================================================================
+# COMPREHENSIVE NOTES: GENERATIVE AI FUNDAMENTALS
+# =============================================================================
+# This section contains detailed explanations of all key concepts from the 
+# "Exploring Generative AI Libraries" course to help you understand the theory
+# behind the practical implementation above.
+
+# =============================================================================
+# 1. WHAT IS GENERATIVE AI?
+# =============================================================================
+# Generative AI is like teaching a computer to be creative by showing it 
+# thousands of examples, then asking it to create something new based on what 
+# it learned.
+#
+# ANALOGY: Imagine showing a computer thousands of paintings, then asking it 
+# to paint its own unique artwork. That's generative AI!
+#
+# KEY CHARACTERISTIC: The computer derives inspiration from provided content 
+# and uses it to create something new and original.
+
+# =============================================================================
+# 2. REAL-WORLD IMPACT OF GENERATIVE AI
+# =============================================================================
+# Generative AI is transforming multiple industries across 4 main domains:
+
+# 2.1 ART AND CREATIVITY
+# ----------------------
+# - Generative Art: AI learns from masterpieces and creates unique artworks
+# - Music Composition: AI composes original music in various styles (classical, jazz)
+# - Impact: Revolutionizing creative industries, gaining recognition in art world
+
+# 2.2 NATURAL LANGUAGE PROCESSING (NLP)
+# -------------------------------------
+# - Content Generation: GPT models create coherent, context-aware text
+# - Chatbots & Virtual Assistants: Human-like conversational agents
+# - Code Writing: AI generates code snippets from descriptions
+# - Impact: Streamlining content creation and software development
+
+# 2.3 COMPUTER VISION
+# -------------------
+# - Image Synthesis: DALL-E generates images from text descriptions
+# - Deepfake Detection: AI tools to combat misinformation
+# - Applications: Graphic design, advertising, visual content creation
+# - Impact: Transforming visual content creation and security
+
+# 2.4 VIRTUAL AVATARS
+# -------------------
+# - Entertainment: Virtual avatars for gaming with human expressions
+# - Marketing: Virtual influencers endorsing products
+# - Impact: Enhancing user engagement in virtual environments
+
+# =============================================================================
+# 3. EVOLUTION OF TEXT GENERATION: BEFORE TRANSFORMERS
+# =============================================================================
+# Understanding the journey from simple models to transformers helps explain
+# why transformers are so powerful today.
+
+# 3.1 N-GRAM LANGUAGE MODELS
+# ---------------------------
+# CONCEPT: Predict next word based on previous words
+# EXAMPLE: "The sky is" → predicts "blue"
+# LIMITATION: Only considers immediate context, no understanding of meaning
+# ANALOGY: Like a language detective that only looks at recent clues
+
+# 3.2 RECURRENT NEURAL NETWORKS (RNN)
+# -----------------------------------
+# CONCEPT: Process sequences word by word, maintaining memory of previous words
+# KEY COMPONENTS:
+# - Hidden State: Network's "memory" that stores information about previous inputs
+# - Temporal Dependency: Information flows across sequence steps through loops
+# - Sequential Processing: Words processed one at a time
+#
+# EXAMPLE WORKFLOW: "I love RNNs"
+# 1. Process "I" → update hidden state
+# 2. Process "love" + previous hidden state → update hidden state  
+# 3. Process "RNNs" + previous hidden state → final output
+#
+# LIMITATION: Struggles with long sequences (vanishing gradient problem)
+
+# 3.3 LONG SHORT-TERM MEMORY (LSTM) & GATED RECURRENT UNITS (GRU)
+# ----------------------------------------------------------------
+# CONCEPT: Advanced RNNs designed to remember information for longer periods
+# IMPROVEMENTS: Better at handling long-term dependencies
+# LIMITATION: Still processes sequentially, struggles with very long sequences
+
+# 3.4 SEQ2SEQ MODELS WITH ATTENTION
+# ---------------------------------
+# CONCEPT: Transform input sequence into output sequence (e.g., translation)
+# ATTENTION MECHANISM: Model "focuses" on relevant parts of input when generating output
+# IMPROVEMENT: Significantly better performance on tasks like machine translation
+# LIMITATION: Still sequential processing, attention limited to encoder-decoder
+
+# =============================================================================
+# 4. TRANSFORMERS: THE GAME CHANGER
+# =============================================================================
+# PAPER: "Attention Is All You Need" by Vaswani et al. (2017)
+# REVOLUTION: Replaced sequential processing with parallel processing
+
+# 4.1 KEY INNOVATION: SELF-ATTENTION
+# ----------------------------------
+# CONCEPT: Every word can attend to every other word in the sequence simultaneously
+# EXAMPLE: In "He gave her a gift because she'd helped him"
+# - To understand "her", the model looks at all other words
+# - It learns that "her" refers to "she" later in the sentence
+# - This happens for EVERY word simultaneously
+
+# 4.2 TRANSFORMER ARCHITECTURE STEPS:
+# -----------------------------------
+# 1. TOKENIZATION: Break sentence into tokens (words/subwords)
+# 2. EMBEDDING: Convert tokens to vectors (capture meaning)
+# 3. SELF-ATTENTION: Compute importance scores between all word pairs
+# 4. FEED-FORWARD: Process each position through neural network
+# 5. OUTPUT: Generate sequence for various tasks
+# 6. LAYERING: Multiple layers of attention + feed-forward networks
+
+# 4.3 WHY TRANSFORMERS ARE POWERFUL:
+# ---------------------------------
+# - PARALLEL PROCESSING: All words processed simultaneously (faster)
+# - LONG-RANGE DEPENDENCIES: Can understand relationships across entire sequence
+# - CONTEXTUAL UNDERSTANDING: Each word's meaning depends on full context
+# - VERSATILITY: Works for NLP, computer vision, and other domains
+
+# =============================================================================
+# 5. LARGE LANGUAGE MODELS (LLMs)
+# =============================================================================
+# CONCEPT: Massive neural networks trained on enormous text datasets
+# ANALOGY: Like supercharged brains with billions of "neurons"
+# CAPABILITIES: Understanding and generating text, following instructions
+# LIMITATION: Early models struggled with complex reasoning and context
+
+# =============================================================================
+# 6. HUGGING FACE ECOSYSTEM
+# =============================================================================
+# PLATFORM: Open-source hub for thousands of pre-trained models
+# KEY COMPONENTS:
+# - AutoTokenizer: Automatically loads correct tokenizer for any model
+# - AutoModelForSeq2SeqLM: Loads sequence-to-sequence models (perfect for chatbots)
+# - Model Hub: Thousands of models for different tasks
+# - Community: Open-source contributions and model sharing
+
+# =============================================================================
+# 7. MODEL COMPARISON & SELECTION
+# =============================================================================
+# Different models have different strengths based on their training:
+
+# 7.1 FACEBOOK BLENDERBOT-400M-DISTILL
+# ------------------------------------
+# - SIZE: 400M parameters (relatively small)
+# - TRAINING: Conversational AI focused
+# - STRENGTHS: Fast, efficient, good for casual conversation
+# - USE CASE: Quick chatbot interactions
+
+# 7.2 GOOGLE FLAN-T5-BASE
+# ------------------------
+# - SIZE: Base model (good balance)
+# - TRAINING: Instruction-tuned (follows directions well)
+# - STRENGTHS: Better at following instructions, answering questions
+# - USE CASE: Task-oriented conversations
+
+# 7.3 OTHER MODELS MENTIONED:
+# ---------------------------
+# - google/flan-t5-small: Smaller version of FLAN-T5
+# - facebook/bart-base: Good for summarization and generation
+# - Each model has different training data and fine-tuning approaches
+
+# =============================================================================
+# 8. PRACTICAL IMPLEMENTATION CONCEPTS
+# =============================================================================
+# Understanding the code implementation:
+
+# 8.1 TEXT PROCESSING PIPELINE
+# -----------------------------
+# INPUT TEXT → TOKENIZATION → MODEL PROCESSING → DECODING → OUTPUT TEXT
+# Each step transforms the data for the next step
+
+# 8.2 KEY PARAMETERS EXPLAINED:
+# -----------------------------
+# - max_new_tokens=150: Limits response length (prevents rambling)
+# - return_tensors="pt": Returns PyTorch format (required by models)
+# - skip_special_tokens=True: Removes technical symbols (<pad>, <eos>)
+# - .strip(): Removes extra whitespace for clean output
+
+# 8.3 MODEL LOADING PROCESS:
+# --------------------------
+# - from_pretrained(): Downloads model from Hugging Face Hub
+# - First run: Downloads and caches model locally
+# - Subsequent runs: Uses cached version (much faster)
+# - Automatic tokenizer selection: Each model has its optimal tokenizer
+
+# =============================================================================
+# 9. FUTURE IMPLICATIONS & APPLICATIONS
+# =============================================================================
+# The transformer architecture has revolutionized AI and continues to evolve:
+
+# 9.1 BEYOND NLP:
+# ---------------
+# - Computer Vision: Vision Transformers (ViTs)
+# - Multimodal: Models that understand text, images, and audio
+# - Robotics: Transformer-based control systems
+
+# 9.2 SCALING TRENDS:
+# ------------------
+# - Models getting larger (GPT-3: 175B parameters, GPT-4: even larger)
+# - Better performance with more data and parameters
+# - Emergent capabilities at scale
+
+# 9.3 PRACTICAL APPLICATIONS:
+# ---------------------------
+# - Code generation (GitHub Copilot)
+# - Creative writing assistance
+# - Educational tutoring systems
+# - Customer service automation
+# - Content creation and marketing
+
+# =============================================================================
+# 10. KEY TAKEAWAYS FOR UNDERSTANDING
+# =============================================================================
+# 1. GENERATIVE AI: Computers creating new content from learned patterns
+# 2. EVOLUTION: From simple n-grams → RNNs → LSTMs → Transformers
+# 3. TRANSFORMER ADVANTAGE: Parallel processing + self-attention = better context
+# 4. PRACTICAL IMPLEMENTATION: Tokenize → Generate → Decode pipeline
+# 5. MODEL SELECTION: Different models excel at different tasks
+# 6. HUGGING FACE: Makes powerful models accessible to everyone
+# 7. REAL-WORLD IMPACT: Transforming industries across art, NLP, vision, avatars
+# 8. CONTINUOUS EVOLUTION: Technology rapidly advancing with new capabilities
+
+# =============================================================================
+# END OF COMPREHENSIVE NOTES
+# =============================================================================
+# These notes provide the theoretical foundation for understanding why the 
+# code above works and how generative AI has evolved to its current state.
+# Use this knowledge to better understand the practical implementation and
+# to explore more advanced concepts in generative AI.
